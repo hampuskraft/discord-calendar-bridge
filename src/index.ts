@@ -75,7 +75,7 @@ type APIGuildScheduledEventExtended = APIGuildScheduledEvent & {
 };
 
 export default {
-  async fetch(_request: Request, env: Env): Promise<Response> {
+  async fetch(_request, env) {
     const events = await env.KV.get<ICalCalendarData>('events', 'json');
     if (!events) {
       return new Response('No events found', {status: 404});
@@ -90,7 +90,7 @@ export default {
     });
   },
 
-  async scheduled(_event: ScheduledEvent, env: Env): Promise<void> {
+  async scheduled(_event, env) {
     const response = await fetch(`https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/scheduled-events`, {
       headers: {Authorization: `Bot ${env.DISCORD_TOKEN}`},
     });
@@ -118,7 +118,7 @@ export default {
     }
     await env.KV.put('events', JSON.stringify(calendar.toJSON()), {expirationTtl: 300});
   },
-};
+} satisfies ExportedHandler<Env>;
 
 function mapRecurrenceRuleToICal(rule: RRule, exceptions: GuildScheduledEventException[]): ICalRepeatingOptions {
   return {
