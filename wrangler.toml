@@ -1,0 +1,8 @@
+name = "discord-calendar-bridge"
+compatibility_date = "2023-08-14"
+main = "src/index.ts"
+account_id = "9f98748511695a9ef6354ea2dc97af9a"
+kv_namespaces = [{ binding = "KV", id = "8be5ce7e408c4c47adf6b207ade42a9a" }]
+
+[triggers]
+crons = ["*/5 * * * *"]
