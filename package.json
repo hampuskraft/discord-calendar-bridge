@@ -1,20 +1,21 @@
 {
-  "name": "discord-calendar-bridge",
-  "version": "1.0.0",
-  "private": true,
-  "scripts": {
-    "deploy": "wrangler deploy",
-    "format": "prettier --write .",
-    "start": "wrangler dev --test-scheduled"
-  },
-  "dependencies": {
-    "ical-generator": "7.0.0"
-  },
-  "devDependencies": {
-    "@cloudflare/workers-types": "4.20240403.0",
-    "discord-api-types": "0.37.79",
-    "prettier-plugin-organize-imports": "3.2.4",
-    "typescript": "5.4.4",
-    "wrangler": "3.47.0"
-  }
+	"name": "discord-calendar-bridge",
+	"version": "1.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"format": "npx @biomejs/biome format --write .",
+		"lint": "npx @biomejs/biome lint --apply-unsafe .",
+		"start": "wrangler dev --test-scheduled"
+	},
+	"dependencies": {
+		"ical-generator": "7.1.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.7.3",
+		"@cloudflare/workers-types": "4.20240512.0",
+		"discord-api-types": "0.37.84",
+		"typescript": "5.4.5",
+		"wrangler": "3.57.0"
+	}
 }
