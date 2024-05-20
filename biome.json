@@ -1,10 +1,22 @@
 {
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"formatter": {
-		"enabled": true
+		"enabled": true,
+		"formatWithErrors": true,
+		"lineWidth": 120
+	},
+	"javascript": {
+		"formatter": {
+			"bracketSpacing": false,
+			"quoteStyle": "single"
+		}
 	},
 	"linter": {
 		"enabled": true,
 		"rules": {
+			"nursery": {
+				"useSortedClasses": "error"
+			},
 			"recommended": true
 		}
 	},

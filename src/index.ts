@@ -1,7 +1,4 @@
-import {
-	type APIGuildScheduledEvent,
-	GuildScheduledEventStatus,
-} from "discord-api-types/v10";
+import {type APIGuildScheduledEvent, GuildScheduledEventStatus} from 'discord-api-types/v10';
 import {
 	ICalCalendar,
 	type ICalCalendarData,
@@ -9,7 +6,7 @@ import {
 	ICalEventStatus,
 	type ICalRepeatingOptions,
 	ICalWeekday,
-} from "ical-generator";
+} from 'ical-generator';
 
 type Env = {
 	DISCORD_TOKEN: string;
@@ -24,10 +21,7 @@ enum RRuleFrequencies {
 	Daily = 3,
 }
 
-const RRuleFrequenciesToICalEventRepeatingFreq: Record<
-	RRuleFrequencies,
-	ICalEventRepeatingFreq
-> = {
+const RRuleFrequenciesToICalEventRepeatingFreq: Record<RRuleFrequencies, ICalEventRepeatingFreq> = {
 	[RRuleFrequencies.Yearly]: ICalEventRepeatingFreq.YEARLY,
 	[RRuleFrequencies.Monthly]: ICalEventRepeatingFreq.MONTHLY,
 	[RRuleFrequencies.Weekly]: ICalEventRepeatingFreq.WEEKLY,
@@ -60,7 +54,7 @@ type RRule = {
 	frequency: RRuleFrequencies;
 	interval: number | null;
 	by_weekday: RRuleWeekdays[] | null;
-	by_n_weekday: { n: number; day: RRuleWeekdays }[] | null;
+	by_n_weekday: {n: number; day: RRuleWeekdays}[] | null;
 	by_month: number[] | null;
 	by_month_day: number[] | null;
 	by_year_day: number[] | null;
@@ -82,81 +76,63 @@ type APIGuildScheduledEventExtended = APIGuildScheduledEvent & {
 
 export default {
 	async fetch(_request, env) {
-		const events = await env.KV.get<ICalCalendarData>("events", "json");
+		const events = await env.KV.get<ICalCalendarData>('events', 'json');
 		if (!events) {
-			return new Response("No events found", { status: 404 });
+			return new Response('No events found', {status: 404});
 		}
 		const calendar = new ICalCalendar(events);
 		return new Response(calendar.toString(), {
 			headers: {
-				"Cache-Control":
-					"public, max-age=300, s-maxage=300, stale-while-revalidate=300, stale-if-error=300",
-				"Content-Disposition": 'attachment; filename="events.ics"',
-				"Content-Type": "text/calendar; charset=utf-8",
+				'Cache-Control': 'public, max-age=300, s-maxage=300, stale-while-revalidate=300, stale-if-error=300',
+				'Content-Disposition': 'attachment; filename="events.ics"',
+				'Content-Type': 'text/calendar; charset=utf-8',
 			},
 		});
 	},
 
 	async scheduled(_event, env) {
-		const response = await fetch(
-			`https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/scheduled-events`,
-			{
-				headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` },
-			},
-		);
+		const response = await fetch(`https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/scheduled-events`, {
+			headers: {Authorization: `Bot ${env.DISCORD_TOKEN}`},
+		});
 		const events: APIGuildScheduledEventExtended[] = await response.json();
 		const calendar = new ICalCalendar();
 		for (const event of events) {
 			const eventMetadata = event.entity_metadata;
 			const isLocationUrl =
-				eventMetadata?.location?.startsWith("http://") ||
-				eventMetadata?.location?.startsWith("https://");
+				eventMetadata?.location?.startsWith('http://') || eventMetadata?.location?.startsWith('https://');
 			calendar.createEvent({
 				id: event.id,
 				start: event.scheduled_start_time,
 				end: event.scheduled_end_time,
 				repeating: event.recurrence_rule
-					? mapRecurrenceRuleToICal(
-							event.recurrence_rule,
-							event.guild_scheduled_event_exceptions,
-						)
+					? mapRecurrenceRuleToICal(event.recurrence_rule, event.guild_scheduled_event_exceptions)
 					: null,
 				summary: event.name,
 				location: isLocationUrl ? null : eventMetadata?.location,
 				description: event.description,
-				organizer: event.creator ? { name: event.creator.username } : null,
-				status:
-					event.status === GuildScheduledEventStatus.Canceled
-						? ICalEventStatus.CANCELLED
-						: undefined,
+				organizer: event.creator ? {name: event.creator.username} : null,
+				status: event.status === GuildScheduledEventStatus.Canceled ? ICalEventStatus.CANCELLED : undefined,
 				url: isLocationUrl ? eventMetadata?.location : null,
 				created: new Date(Number(event.id) / 4194304 + 1420070400000),
 			});
 		}
-		await env.KV.put("events", JSON.stringify(calendar.toJSON()), {
+		await env.KV.put('events', JSON.stringify(calendar.toJSON()), {
 			expirationTtl: 300,
 		});
 	},
 } satisfies ExportedHandler<Env>;
 
-function mapRecurrenceRuleToICal(
-	rule: RRule,
-	exceptions: GuildScheduledEventException[],
-): ICalRepeatingOptions {
+function mapRecurrenceRuleToICal(rule: RRule, exceptions: GuildScheduledEventException[]): ICalRepeatingOptions {
 	return {
 		freq: RRuleFrequenciesToICalEventRepeatingFreq[rule.frequency],
 		interval: rule.interval ?? undefined,
 		until: rule.end ?? undefined,
-		byDay: rule.by_weekday?.map(
-			(weekday) => RRuleWeekdaysToICalWeekday[weekday],
-		),
+		byDay: rule.by_weekday?.map((weekday) => RRuleWeekdaysToICalWeekday[weekday]),
 		byMonth: rule.by_month ?? undefined,
 		byMonthDay: rule.by_month_day ?? undefined,
 		bySetPos: rule.by_year_day ?? undefined,
 		count: rule.count ?? undefined,
-		exclude: exceptions
-			.filter((exception) => exception.is_canceled)
-			.map((exception) => exception.scheduled_start_time),
+		exclude: exceptions.filter((exception) => exception.is_canceled).map((exception) => exception.scheduled_start_time),
 		startOfWeek: ICalWeekday.SU,
 	};
 }
